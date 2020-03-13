@@ -1,0 +1,294 @@
+\newtoks\course
+\newtoks\assignment
+\newtoks\professor
+\newtoks\semester
+\newtoks\duedate
+\documentclass[14pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{vhistory}
+
+
+%______________________________________________________________________________%
+\course{Software Design and Architecture}
+\assignment{SOLID Principles}
+\professor{Yousef Hassouneh}
+\semester{Spring/Summer 2020}
+\duedate{2020-03-13}
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+\title{\the\course\\\the\assignment}
+\author{Tareq Kirresh(TK) : 1195221}
+\begin{document}
+\begin{figure}
+\centering
+  \includegraphics[width=7cm]{./images/birzeit-logo.png}
+\end{figure}
+\maketitle 
+\begin{center} 
+	Course Professor : Dr. \the\professor\\
+    Semester : \the\semester\\
+    Due Date : \the\duedate\\
+\end{center}
+\newpage
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+\tableofcontents 
+\newpage 
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+%\begin{versionhistory}  %uncomment for version history
+%\addcontentsline{toc}{section}{Version History}
+% \vhEntry{1.0}{5.11.17}{TK|MJ|AB}{Created.} % example Version Histroy entry
+%\end{versionhistory}
+%\newpage 
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+
+
+\section{Introduction}
+SOLID is a mnemonic acronym for five design principles intended to make 
+software designs more understandable, flexible and maintainable.The theory of 
+SOLID principles was introduced in a 2000 paper titled "Design Principles and Design Patterns".
+\subsection{Single Responsibility Principle}
+The Single Responsibility Principle is a simple concept. It simply tells you that you should not write 
+code that does more than it needs to do, and that you should not write classes/modules that have more than
+one function. There is some Debate on what "Single Responsibility" means. In a strict Object Oriented sense,
+it means that one class should be responsible for one thing only (A class for data access, a class for manipulating
+prices, etc). However, there are other possible meanings to this. In a Domain Driven sense, single responsibility
+means that an Entity is responsible for all business logic for all of the classes it aggregates, and in Behavior
+Driven Design, it means that a class is responsible for a single behavior in the system. In all cases,
+and no matter how you define Single Responsiblity, as long as it is consistent, it should make the code
+base more manegable and understandable. Using this principle. 
+it makes it simple to find where functionality lies, and avoids tangled messes in functions 
+and classes.
+\subsection{Open Closed Principle}
+The Open/Closed Principle is a very useful concept in maintaining contracts. It simply states that files
+should be Closed to Modification but Open to Addition. That is, Once a class and its functionality are written,
+documented, and used, then whatever happens in the future, those methods should always accept the same input
+and produce the same output regardless of what happens in the middle. However, it should be possible to 
+add new functionality without affecting old functionality in any way. That is, methods should be well
+defined and have clear boundaries. 
+
+Additionally, functionality is added not by modifying the original class, but rather by extending it, 
+to maintain this segregation.
+
+\subsection{Liskov Substitution Principle}
+The Liskov Substitution Principle holds that it should be possible that given that I am calling
+a function in a base class,I should be able to substitute the base class for any of its children and 
+get the same result
+
+\subsection{Interface Segregation Principle}
+The Interface Segregation Principle simply states that We should not have interfaces that
+force classes to have more functionality than they should have. That is, an interface
+should have a single responsibility and that It shouldnt have to implement/be burndend 
+with responsibilities it doesnt need, Instead of 
+that you should write a collection of smaller, discrete interfaces. 
+
+\subsection{Dependency Inversion Principle}
+The Dependency Inversion Principle encourges us to rely on abstractions rather than rely on concrete implementations.
+That is, instead of writing code that refres to actual class, we should be writing code that relies on interfaces or abstract
+classes, therefore allowing us to change implementations later on or even on the fly.
+
+\subsection{Notes}
+I will be using examples from a real project I am working on. I will be attaching screenshots of code, 
+but If the code itself needs to be provided, then I can do so.This application is concerned with
+the delivery of coffee orders.
+As a practitioner of Domain Driven design, I will be explaining the SOLID principles from that point of View. 
+\newpage
+\section{Single Responsibility Principle}
+One of the best usages of the Single Responsibility Principle is to segregate the storage of 
+entities from their actual use in the system. The project we are studying uses Hibernate
+as its ORM. In sotrage, I need to have the User and authentication rights of a user stored. However,
+In the Application a "Barista" is a distinct entity from a "Customer". As such, these 2 entities
+are represented as classes in the domain, with no mention of the "User" entity at all. 
+
+So what was done here, was to seperate the responsiblity of storage form the responsiblity 
+of actually doing business operations. Upon closer inspection of the code, in fact, 
+the "Barista" in the domain has an ID matching the "User" in storage. This is becuase
+the "User" is something technical; not inherent to the business requirements, while
+the "Barista" is. 
+
+By sperating our persistence from our business domain, we can write simpler code
+while performing business operations, and not care about how things are being stored in the background,
+increasing the Cohesion within the Domain Layer, and decreasing the coupling between the Persistence Layer
+and Domain Layer, allowing us to easily switch database providers, and persistence methods.
+
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/barista-entity.png}
+  \caption{Barista Domaain Entity}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/barista-persistable.png}
+  \caption{Barista Database Persistable, With inbuilt user entity and conversion}
+\end{figure}
+
+\newpage
+
+\section{Open Closed Principle}
+In The case of this Case Study, All entities needed to do CRUD operations. Additionally,
+There were callbacks and handlers that needed to be done after certain operations.
+
+This was achieved by using a domain bus to handle any callback-style functionality. For example
+whenever a "User" account is persisted in the database, it needs to create the equivalent domain
+Entity for that role. a "userPersisted" event is published into the message bus, and every 
+listener for that event is called.
+
+This means that new functionality can be added to a certain domain event without
+having to touch existing code(or even being aware of it). Here are 2 examples of 
+event handlers.
+
+If in the future, new functionality needs to be added, say for example, a new user
+role is added such as "DeliveryPerson", then a new handler is added, wihtout 
+having to touch the old handlers or to tell the entity to call it.
+
+This keeps thing loosely coupled, since neither the domain entity is aware of the 
+handlers, nor are the handlers aware of who threw the event. 
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/user-saved-post.png}
+  \caption{The Emission of the "userSaved" event}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/barista-saved-handler.png}
+  \caption{A Handler for the "userSaved" Event that handles Barista Functionality}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/customer-saved-handler.png}
+  \caption{A Handler for the "userSaved" Event that handles Customer Functionality}
+\end{figure}
+
+\newpage
+\section{Liskov Substitution Principle}
+In this project, it was required that each entity was capable of CRUD operations. Since Hibernate
+is being used, Then it was possible to create a Generic CRUD repository that was capable of doing
+the CRUD opreations all Entities that provide certain functionality. An Abstract class, 
+"HibernatePersistable", was created, and all Persistables were an extention of this class. When
+we desire to persist an entity, we simply extend the repository with the type specified, substituting
+the "HiberatePersistable" with the Entity and Persistable we want to do the  CRUD Operations on. 
+This means that we dont have to re-write the same boilerplate persistence logic for each entity, making the code
+overall cleaner and behavior more consistent.
+
+
+Doing this also means that all CRUD operations are independent of the actual persistable persisted, allowing us 
+to basically change all properties inside the persistable without worring about how it will be saved.
+
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/hibernate-repository.png}
+  \caption{The Generic Hibernate Repositroy}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/hibernate-persistable.png}
+  \caption{The Abstract Hibernate Persistable}
+\end{figure}
+\newpage
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/hibernate-save-method.png}
+  \caption{The Generic Save Method, where (T)  will be replaced by some sub-class of HibernatePeristable}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/coffee-shop-repo.png}
+  \caption{The Coffee Shop Repository Implementation}
+\end{figure}
+
+\newpage
+
+\section{Interface Segregation Principle}
+So at some point in the future of the application, It will be nesecarry to interface with ERP and accounting 
+systems to produce legaly sound tax invoices and calculate reports and aggregate sums. It was also needed
+to have a way to transfrom Domain Entities into Persistables. This was done using the "Transformable" interface,
+which only specified that something is converted from a Domain Entity to an External Object and vice versa. This
+interface was extended into the Abstract Class "HibernatePersistable", which added specific functionality related
+to persistence. That is to say, the transformation of entities to/from domain form is a seperate responsibility from
+making them persistable.
+
+This means that we dont burden all our transformer classes with extra-work for persistence, 
+seperating the persistence from the communcation aspects of the system, while also allowing us to write
+generic code.
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/transformable.png}
+  \caption{The Transformable Interface}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/to-persistable.png}
+  \caption{The toPersistable() method of the HibernatePersistable}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/barista-persistable.png}
+  \caption{The Barista Persistable that extends the Hibernate Persistable}
+\end{figure}
+
+\newpage
+
+\section{Dependency Inversion Principle}
+Initially, in this project, I was unsure of the database that will be used, How multi-tenancy
+was supposed to be done, and what frameworks were going to be used to 
+provide the REST services. To get started on working and to have something callable for 
+other teams, and somethign testable all repositories and services were declared
+as interfaces and given factories. This way, we dont know what implementation we are getting, 
+only that there we should expect these behaviors from the returned object.
+
+Working in this way of write code using interfaces and providing implemenations
+via factories means that we can change implementations of different parts of the
+application, and even change implementations on the fly, without having to refactor
+other parts.
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/user-repository-interface.png}
+  \caption{User Repository Interface, declaring what methods will be used}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/user-service-interface.png}
+  \caption{User Service Interface, declaring what services need to be provided}
+\end{figure}
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/user-service-impl.png}
+  \caption{User Service Implementation, calling on the User Repository Factory to provide some implementation of the
+  User Repository}
+\end{figure}
+\newpage
+\begin{figure}[!h]
+\centering
+  \includegraphics[width=10cm]{./images/user-rest-service.png}
+  \caption{User Rest Service, calling on the User Service Factory to provide some implementation of the
+  User Service}
+\end{figure}
+
+\newpage
+
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+%\newpage 
+%\begin{thebibliography}{9} % uncomment for biblography
+%\addcontentsline{toc}{section}{References}
+%\bibitem{predictiveTaxi} % example biblography entry
+%Satish Kumar Verma, Hoang Tam Vo,
+%\textit{A Predictive Taxi Dispatching System for Improved User
+%Satisfaction and Taxi Utilization, SAP Innovation Center, Singapore, 2015.}
+%\end{thebibliography}
+%______________________________________________________________________________%
+\end{document}
