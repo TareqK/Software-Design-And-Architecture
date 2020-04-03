@@ -1,0 +1,156 @@
+\newtoks\course
+\newtoks\assignment
+\newtoks\professor
+\newtoks\semester
+\newtoks\duedate
+\documentclass[14pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{vhistory}
+
+
+%______________________________________________________________________________%
+\course{Software Design and Architecture}
+\assignment{Architectural Mismatch}
+\professor{Yousef Hassouneh}
+\semester{Spring/Summer 2020}
+\duedate{2020-04-03}
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+\title{\the\course\\\the\assignment}
+\author{Tareq Kirresh(TK) : 1195221}
+\begin{document}
+\begin{figure}
+\centering
+  \includegraphics[width=7cm]{./images/birzeit-logo.png}
+\end{figure}
+\maketitle 
+\begin{center} 
+	Course Professor : Dr. \the\professor\\
+    Semester : \the\semester\\
+    Due Date : \the\duedate\\
+\end{center}
+\newpage
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+\tableofcontents 
+\newpage 
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+%\begin{versionhistory}  %uncomment for version history
+%\addcontentsline{toc}{section}{Version History}
+% \vhEntry{1.0}{5.11.17}{TK|MJ|AB}{Created.} % example Version Histroy entry
+%\end{versionhistory}
+%\newpage 
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+
+
+\section{Introduction}
+Architectural Mismatch is a general Software Engineering problem that arises when 
+building systems or integrating systems with off the shelf components. While using
+Commercial Off The Shelf components(We will use the acronym COTS moving forward, even when 
+talking about open source components) is supposed to be enabling and decrease 
+the cost and the time of developing a software, real life scenarions often result
+to the opposite; bad choices, bad pracrice, and lack of documentation early on 
+in a project lifecycle and decsision process may be devestating down the line.
+
+We will be examining Architectural Mismatch, its causes, how to deal with it, 
+and its current state, based on the  "Architectural Mismatch
+or Why it’s hard to build systems out of existing parts"  paper and its follow up
+article 15 years later,  "Architectural Mismatch: Why Reuse Is Still So Hard".
+
+The general structure of this article is that we will discuss the point in the original paper 
+and then provide information on how it stands in relation to the modern world. This will be followed
+finally with a section on my personal reflections.
+\newpage
+\section{What is Architectural Mismatch}
+Architectural Mismatch is the result of attempting to build a system out of incompatible
+components; It is the result of chosing incompatible technologies, paradigms, or protocols
+when choosing a stack to work with; It is the problem of misfitting connectors, incompatible 
+data structures, differing code styles, and building on assumptions. Succinctly put, it is the
+idea that
+\begin{quote}
+Each component makes assumptions about the  structure of the environment in which
+it is to operate. Most if not all of these assumptions are implicit,
+and many of them are in conflict with each other.
+\end{quote}
+
+To Add to the above definition, and based on the current status of tools, this would also include
+ignoring assumptions that are explicit and instead of going with what is in style or trendy, rather
+than what fits business goals and business scale.
+\subsection{Categories of Architectural Mismatch and How Architectural Mismatch Arises}
+We can Identify 4  main categories of architectural mismatch
+\begin{itemize}
+  \item Assumptions about the nature of components
+  \item Assumptions about the nature of connectors
+  \item Assumptions about the global architectural structure
+  \item Assumptions about the construction process
+\end{itemize}
+
+\subsubsection{Assumptions about the nature of components}
+There are 3 main assumptiions about the nature of components that
+are cause for mismatch
+\begin{itemize}
+  \item Infrastructure : Each package makes assumptions about the infrastructure it has and provides. In many cases, packages make the assumption that they will be providing a significant ammount of architecture - note that this is less true in a lot of modern packages, but still holds water - and so using multiple packages may providing conflicting infrastructure, such as using a package that provides infrastructure for rendering when building a non-GUI application. This has been mitigated in more recent years, with the existence of large, reusable pieces of infrastructures and community-preffered methods and tools, in addition to the rise of containerization engines such as LXC and Docker that aim to isolate components and their dependencies and only expose their useful interfaces externally.
+  \item Control Model : Each package makes assumption about the control flow of the program, the main loop, the structure of callbacks and how they are done, the order of execution; sometimes, these models of control will conflict due to differing paradigms, and will make it difficult to build a software system around them, leading to either rework of the components used, changes in choices, or the writing of compatability layers that will add overhead to development and runtime. This is still very much a problem,  even with the existence of relatively standardized control flow models such as event loops, promise models, publish-subsctibe models, and principles such as the Command Query Segregation Principle that formalize how the control flow is done.
+  \item Data Model : Each package also makes assumptions about the data they will be manipulating. Some components deal with plaintext; others with binary data; and other with distributed data structures. These differences will lead to the creation of translation layers, which, even if the internal model in each of our own components is consistent, will lead to a not-insignificant ammount of overhead in runtime and development.
+This is still a problem, as assumptions in mutability/immutability, access to heirarchy, and data binding are still not always understood and documented and cannot be standardised across components.
+\end{itemize}
+\newpage
+\subsubsection{Assumptions about the nature of connectors}
+There are 2 main assumptions about connectors that are made
+\begin{itemize}
+  \item Protocols : Protocols are how software components choose to communicate; in terms of message types, paradigms, and the flow of messages between components. Mismatches in the protocols of a system will either lead to changes in components we build or will lead to writing complex protocol wrappers to make sure everythign works. There is also a chance of protocols polluting our own components; such that a simple component will have to be implemented in a complicated way due to the communication protocol it uses being asynchronous and multithreaded; or a system having to keep a parallel structure of messages to that of the communication component just to maintain sensible flow. Modern approaches have begun to remedy this by offering conventions and standards such as AJAX ,gRPC, and Publish-Subscribe message queues that are well known and documented, but the problems still persist 
+  \item Data Structures : A connector will also make assumptions on the data structures it is transferring. Some connectors will make the assumption of strong typing and using primitives; others will make assumptions that Strings will be used; in all cases, if we are communicating in data structures that differ, there will be a need for translators and this in turn has overhead. More modern development now however, tends to use a smaller number of well known structures such as JSON, YAML, BSON, and XML, and translation layers have been optimized such that overhead is much lower and reusability is higher.
+\end{itemize}
+\subsubsection{Assumptions about the global architectural structure}
+Components will make assumptions about how we structure our system. For example, using an Event Queue such as Kafka assumes that all
+listeners and senders are asynchronous; that there are no locks, and that consistency will be maintained by each individual listener, and 
+that each part of the system is aware of how to react to events elsewhere in the system if they need to. 
+Using an Enterprise Service Bus such as Apache Synapse makes the assumption that all parts of the system are completely unaware of each other,
+and that they offer some service functionality where the initiating side handles the control flow. Using just plain HTTP assumes that all 
+parts of the system are stateless and transactionality is scoped to a single service call. All of these assumptions lead to us having 
+to develop and integrate our components differently, and to write them differently. While the fact that each component makes assumptions about
+the architectural structure of a system, we know have architectural patterns and Cookbooks to help guide us through theses mismatches and choose 
+the correct tools and styles for our business needs.
+\subsubsection{Assumptions about the construction process}
+Each component makes an assumption of its dependencies and the order in which things will be developed and built - and how it will be deployed. 
+This has become less of  a problem in more recent times. The existence of better dependency and build management systems at compile times such as Maven and NPM, and better runtime module dependency and detection systems such as OSGi and better Orchestration systems such as Kuberenetes and Docker compose make this less of a problem. CI/CD and automation pracrice has led to the standardisation to a lot of the parts of  build cycles, and the creation of per-language standards and defacto community standards to mitigate this issue. It is much easier today, to create a complicated, system with dependencies form multiple components build and run using maven than it was using makefiles and header file's import order. Additionally, IDEs have gotten more advanced, and understand some of the construction semantics of a language and make it easier to detect and solve construction and startup issues than earlier tools allowed.
+\newpage
+\section{Reflections}
+
+Most Architectural Mismatch issues arise mostly from lack of communication - between shareholders and the business, the business and its IT Departments, and IT Departments among eachother and with external providers.
+
+Is Architectural Mismatch still a problem, and are systems still difficult to build using existing components? Absolutely. It is easier than 
+ever now for any developer or group to publish their work and be taken seriously, even becoming a defacto standard in their niche and making a permanent mark on the domain they work in. However, we have also grown experiences and collectively shared them, and have now created guidelines - even community ones - for common problems and paradigms and we understand the limits and features of our common tools better. We also have better formalization of all documentation and aspects related to architecture. 
+
+We have also started as an industry to adopt fail-fast and fail-cheap approaches to test the limits of our ideas before we push them into production. Iterative development has also been useful in this regard, allowing us to solve problems as they arise and commit to less earlier on in the project lifecycle. 
+
+Architectural Mismatch will always exist, if not for anything else then just for the sheer amount of tools, languages, paradigms, and conventions that exist. Things will come in style quickly, become dominant, and then no longer become mode just as fast, leaving the projects that invested into those tools or such left hanging without support. Vendor-Lock and comitment to a technology partner will always plague IT Departments.  In My personal work, I have seen this happen; a client would want an application developed based on a digitalization platform that was preselected that is incompatible with the flow they desire in their application; Maintenance of legacy systems built on frameworks that are no longer supported or maintained but cannot be changed due to dependencies elsewhere in the systems; Database choices that were commited to because of the need to use old data despite being incompatible with the desired transaction lifecycle. These are all issues we will face at some point or another. Thankfully however, we know understand how to deal with them a little more. 
+
+
+
+%______________________________________________________________________________%
+
+
+%______________________________________________________________________________%
+%\newpage 
+%\begin{thebibliography}{9} % uncomment for biblography
+%\addcontentsline{toc}{section}{References}
+%\bibitem{predictiveTaxi} % example biblography entry
+%Satish Kumar Verma, Hoang Tam Vo,
+%\textit{A Predictive Taxi Dispatching System for Improved User
+%Satisfaction and Taxi Utilization, SAP Innovation Center, Singapore, 2015.}
+%\end{thebibliography}
+%______________________________________________________________________________%
+\end{document}
